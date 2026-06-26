@@ -1,28 +1,57 @@
 /* ============================================================
    Resonance — main stylesheet
-   P-02: full prototype CSS lives here unchanged.
-   The :root tokens below are staged for Phase 2 (P-04…P-08), which
-   replaces the prototype's purple→cyan visual with the restrained
-   #07070f + #534AB7 identity. For now those tokens are unused.
+   Phase 2 in progress. The home screen (P-04), listening + result
+   header (P-05), and the typography system use the restrained
+   #07070f + #534AB7 identity. The Result body, Library, and Profile
+   still carry prototype colour styling until their redesign phases.
    ============================================================ */
 
 :root {
-  /* Phase 2 color tokens (unused until P-04) */
-  --color-bg: #07070f;
-  --color-accent: #534ab7;
+  /* Brand color tokens.
+     Background lifted from #07070f to #0a0a14 — slightly less inky so the
+     screen reads as "deep ink" rather than "OLED off." Accent brightened
+     from #534ab7 to #6258c8 to make the waveform feel alive. --color-glow
+     is the new lavender highlight used by the drifting glow inside the
+     waveform — a brighter expression of the same colour family. */
+  --color-bg: #0a0a14;
+  --color-accent: #6258c8;
+  --color-glow: #b7afff;
+  /* Soft champagne — the "warm" pole opposite the cool indigo/lavender.
+     Used on the Discovery Dial's Charting end so the dial visualises a
+     warm↔cool spectrum (mainstream/familiar warmth vs. obscure/twilight
+     cool) rather than a single-colour track. */
+  --color-warm: #c9ad7a;
+  /* Mid-tone indigo used for italic "flavor" text — the dial subtitle
+     and the per-rec "sonic reason." Sits between --color-accent and
+     --color-glow so the secondary/descriptive elements share one voice. */
+  --color-flavor: #7f77dd;
   --color-text: #ffffff;
   --color-text-dim: rgba(255, 255, 255, 0.55);
   --color-hairline: rgba(255, 255, 255, 0.08);
 
-  /* Type tokens */
+  /* Font families.
+     Cormorant Garamond — the "voice": the wordmark, page + track titles,
+       the listen prompt, emotional descriptors, headline stats.
+     Inter — the "system": every functional UI label, button, and metadata.
+     Weights — Inter: 400 body/hints · 500 labels & buttons · 600 emphasis.
+               Cormorant: 500 default · 600 large titles. Nothing above 600. */
   --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Type scale (px, to match the rest of the codebase) */
+  --text-xs: 11px;   /* metadata, hints, eyebrow labels */
+  --text-sm: 13px;   /* secondary text — artist names, values */
+  --text-base: 15px; /* primary UI — list labels, buttons */
+
+  /* Tracking */
+  --tracking-label: 0.1em;  /* uppercase micro-labels */
+  --tracking-wide: 0.04em;  /* the wordmark */
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* ===== Reset + base (from prototype) ===== */
+/* ===== Reset + base ===== */
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
@@ -44,7 +73,11 @@ body {
   width: 100%;
   max-width: 420px;
   height: min(860px, 95vh);
-  background: #0a0a12;
+  /* Subtle ambient indigo glow at the top — like the room being dimly lit
+     by the music itself. Adds vertical depth without flashy effect. */
+  background:
+    radial-gradient(140% 70% at 50% 26%, rgba(98, 88, 200, 0.10), transparent 60%),
+    #0c0c18;
   border-radius: 40px;
   box-shadow:
     0 40px 80px -20px rgba(0, 0, 0, 0.7),
@@ -74,76 +107,100 @@ body {
   z-index: 100;
 }
 
-.header {
-  padding: 50px 24px 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 22px;
-  letter-spacing: 0.02em;
-  color: var(--color-text);
-}
-
-.header-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.7);
-}
+/* No persistent top header — the wordmark lives inside the home
+   composition, and Library/Profile/Result already have their own titles.
+   Removes the most "generic music app" element from the chrome. */
 
 .content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 24px 100px;
+  /* Top spacing comes from .topbar above. Bottom no longer needs to clear
+     a floating nav, so just normal breathing room before the phone edge. */
+  padding: 8px 24px 28px;
   scrollbar-width: none;
 }
 
 .content::-webkit-scrollbar { display: none; }
 
-.nav {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 76px;
-  padding-bottom: 12px;
-  background: rgba(10, 10, 18, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+/* ===== Topbar — pill mode toggle + profile avatar =====
+   Replaces the prototype's bottom tab bar. Single horizontal strip above
+   .content. The pill is the primary mode toggle (Listen / Explore); the
+   avatar is a discreet right-side access point to Profile, removing the
+   need for a third pill option. Auto-hides during listening for full
+   immersion (the listening flow owns the screen). */
+
+.topbar {
+  position: relative;
   display: flex;
-  justify-content: space-around;
   align-items: center;
+  justify-content: center;
+  padding: 18px 24px 6px;
+  transition: transform 0.45s var(--ease-out), opacity 0.35s var(--ease-out);
 }
 
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.4);
-  transition: color 0.2s;
+.topbar--hidden {
+  transform: translateY(-18px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pill {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.025);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  padding: 3px;
+}
+
+.pill-option {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
   background: none;
-  border: none;
-  font-family: inherit;
+  border: 0;
+  padding: 7px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out);
 }
 
-.nav-item.active { color: #fff; }
-.nav-item .nav-icon { width: 24px; height: 24px; stroke-width: 2; }
-.nav-item .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+.pill-option:hover { color: rgba(255, 255, 255, 0.8); }
+
+.pill-option--active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+}
+
+/* Avatar — small, discreet, anchored to the right edge of the topbar.
+   Reuses the topbar's hairline border so the two elements feel like one
+   visual system. Letter sits in Cormorant for a small editorial touch. */
+.topbar-avatar {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out);
+}
+
+.topbar-avatar:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+}
 
 /* ===== HOME — full-screen tap-anywhere listen stage ===== */
 
@@ -152,21 +209,39 @@ body {
   min-height: 100%;
 }
 
+/* Anchored layout: title pinned near the top, waveform vertically centred
+   in the remaining space (via auto margins on .waveform), prompt pinned
+   near the bottom. Replaces the previous justify-content: center stack —
+   the top of the screen now reads as composed rather than empty. */
 .listen-stage {
   flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 44px;
-  padding: 32px 0;
+  padding: 28px 0 32px;
   background: none;
   border: 0;
   cursor: pointer;
   color: inherit;
   font-family: inherit;
   transition: opacity 0.4s var(--ease-out);
+}
+
+/* The wordmark, treated as an editorial title rather than a corner logo.
+   Lives inside the listen-stage so it's part of the cinematic composition
+   (and still falls inside the tap-anywhere target). Soft lavender halo
+   matches the waveform's lighting and ties the top region to the lit
+   world below — gives the anchored top region quiet visual weight without
+   adding a separate decorative element. */
+.home-title {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  color: rgba(255, 255, 255, 0.78);
+  filter: drop-shadow(0 0 12px rgba(183, 175, 255, 0.18));
 }
 
 .listen-stage:active { opacity: 0.6; }
@@ -180,50 +255,82 @@ body {
 .waveform {
   display: block;
   width: 100%;
+  /* Auto vertical margins absorb the space between title and prompt — the
+     waveform stays centred in the remaining stage while title + prompt
+     stay anchored to their ends. */
+  margin: auto 0;
 }
 
+/* The waveform's motion runs on the Web Animations API (see waveform.js).
+   CSS owns the static look + the smooth idle/listening transition.
+   The lighting lives INSIDE each bar via drop-shadow — the bars emit
+   their own lavender halo, no separate orb. The halo strengthens
+   smoothly when listening. */
 .waveform-svg {
   display: block;
   width: 100%;
-  max-width: 300px;
+  max-width: 340px;  /* nearly full-width — cinematic presence without going edge-to-edge */
   height: auto;
   margin: 0 auto;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: center;
+  transition: transform 0.85s var(--ease-out);
 }
+
+.waveform-svg--listening {
+  transform: scaleY(1.1);
+}
+
+/* Gradient stop colours are class-based now because each bar has its own
+   gradient (so its apex stops can animate independently — see waveform.js).
+   The fade stops at the very top/bottom inherit the colour of their
+   neighbour so opacity transitions don't introduce a hue shift. */
+.wave-stop-apex,
+.wave-stop-fade-top    { stop-color: var(--color-glow); }
+.wave-stop-body,
+.wave-stop-fade-bottom { stop-color: var(--color-accent); }
 
 .waveform-bar {
-  fill: var(--color-accent);
+  /* `fill` is set per-bar as an inline SVG attribute in waveform.js so each
+     bar references its own gradient (with its own animated apex stops).
+     Don't set `fill` here — CSS would override the per-bar attributes and
+     point every bar at a single gradient that no longer exists. */
   transform-box: fill-box;
   transform-origin: center;
-  animation: waveform-breathe 3.2s var(--ease-out) infinite;
+  /* Soft lavender halo emitted by each bar — the "internal" glow. It
+     scales naturally with the bar's animated height + opacity, so light
+     intensity tracks the breathing motion automatically. */
+  filter: drop-shadow(0 0 3px rgba(183, 175, 255, 0.5));
+  transition: filter 0.85s var(--ease-out);
 }
 
-@keyframes waveform-breathe {
-  0%, 100% { transform: scaleY(0.16); opacity: 0.4; }
-  50%      { transform: scaleY(0.6);  opacity: 0.85; }
+.waveform-svg--listening .waveform-bar {
+  filter: drop-shadow(0 0 6px rgba(183, 175, 255, 0.85));
 }
 
 .listen-prompt {
   display: block;
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--color-text-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .waveform-bar {
-    animation: none;
-    transform: scaleY(0.4);
-    opacity: 0.7;
+  .waveform-svg,
+  .waveform-svg--listening {
+    transform: none;
+    transition: none;
   }
 }
 
 .section-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: var(--tracking-label);
   color: rgba(255, 255, 255, 0.5);
   margin: 24px 0 14px;
 }
@@ -238,67 +345,9 @@ body {
 
 .recent-art { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
 .recent-info { flex: 1; min-width: 0; }
-.recent-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recent-artist { font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
-.recent-time { font-size: 11px; color: rgba(255, 255, 255, 0.3); }
-
-/* ===== LISTENING OVERLAY ===== */
-
-.listening-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(5, 5, 10, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.listening-overlay.active { display: flex; }
-
-.listening-viz {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  height: 80px;
-  margin-bottom: 40px;
-}
-
-.viz-bar {
-  width: 6px;
-  background: linear-gradient(180deg, #8c52ff, #00d2ff);
-  border-radius: 3px;
-  animation: viz 0.6s infinite alternate ease-in-out;
-}
-
-@keyframes viz {
-  0% { height: 8px; }
-  100% { height: 70px; }
-}
-
-.listening-text { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
-.listening-sub {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 60px;
-  text-align: center;
-  padding: 0 30px;
-}
-
-.cancel-btn {
-  padding: 12px 28px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-radius: 100px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
+.recent-title { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-artist { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.5); margin-top: 3px; }
+.recent-time { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.3); }
 
 /* ===== VIEWS ===== */
 
@@ -308,6 +357,45 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* P-16 — Result view gets its own enter animation: a full slide-up from
+   the bottom edge. The home → result transition is the app's signature
+   moment ("the song just got identified, here it is"), and a 12 px nudge
+   doesn't sell that the same way a 100% rise does. cubic-bezier(0.16, 1,
+   0.3, 1) is a strong deceleration curve — feels weighted and cinematic
+   without the springiness of a bouncy ease.
+   Overrides the generic fadeIn keyframe above for #view-result only —
+   library and profile still use fadeIn.
+   `both` fill-mode pins the end state (opacity 1, transform none) so
+   nothing — including any leftover WAAPI exit-animation cascade priority
+   — can leave the view invisible after the slide-up completes. The
+   matching cancel() in navigation.js's back-button handler is the
+   primary guard; this is the belt-and-braces.                          */
+.view#view-result.active {
+  animation: resultEnter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes resultEnter {
+  from { opacity: 0.4; transform: translateY(100%); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
+
+/* P-16 — Result-view exit is run via WAAPI in navigation.js (CSS can't
+   easily run an animation before display:none takes effect). The class
+   below is added by the back-button handler while the WAAPI animation
+   is running, so any nested CSS animations on .view#view-result.active
+   don't fight the exit transform. Cleared by the handler when the
+   animation finishes and display swaps.                                 */
+.view#view-result.view--leaving {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view.active,
+  .view#view-result.active {
+    animation: none;
+  }
 }
 
 .back-btn {
@@ -326,33 +414,180 @@ body {
 
 /* ===== RESULT ===== */
 
-.result-hero { text-align: center; margin-bottom: 24px; }
+.result-hero { text-align: center; margin-bottom: 28px; }
 
 .result-art {
   width: 200px;
   height: 200px;
   border-radius: 20px;
-  margin: 0 auto 16px;
+  margin: 0 auto 18px;
   box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6);
   position: relative;
   overflow: hidden;
 }
 
-.confidence-badge {
-  display: inline-block;
-  background: rgba(34, 197, 94, 0.14);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #4ade80;
-  padding: 4px 10px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
+/* P-16 — Result-screen mount choreography.
+   The view itself slides up (380 ms). Inside that, individual elements
+   compose in afterward — album art scales up so the cover lands like it
+   was placed, the three descriptor words fade in staggered like they're
+   being chosen one at a time, then the deep-link buttons and the dial
+   section catch up. The Sonic Portrait grow-in (P-06 + P-11) handles
+   itself via the renderSonicPortrait WAAPI animation. All under 400 ms
+   apiece; total composed motion ends inside ~700 ms.                    */
+.view#view-result.active .result-art {
+  animation: resultArtIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 100ms;
 }
 
-.result-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
-.result-artist { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+@keyframes resultArtIn {
+  from { opacity: 0.6; transform: scale(0.88); }
+  to   { opacity: 1;   transform: scale(1); }
+}
+
+/* Per-descriptor stagger via :nth-child — keeps the rule entirely in CSS
+   without needing JS to set inline animation-delays. Three descriptors
+   max in practice; any extras share the third slot's delay.
+   Scoped to `.descriptor--initial` (set by renderDescriptors only on the
+   first paint per match) so the audio-features re-render — which swaps
+   the placeholder descriptors for real delta-derived ones — DOESN'T
+   re-trigger the stagger. Without this scope, descriptors 2 and 3 would
+   briefly snap to opacity 0 mid-result-screen as the new spans waited
+   out their staggered delays.                                          */
+.view#view-result.active .descriptor.descriptor--initial {
+  animation: resultDescriptorIn 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.view#view-result.active .descriptor.descriptor--initial:nth-child(1) { animation-delay: 0ms; }
+.view#view-result.active .descriptor.descriptor--initial:nth-child(2) { animation-delay: 120ms; }
+.view#view-result.active .descriptor.descriptor--initial:nth-child(3),
+.view#view-result.active .descriptor.descriptor--initial:nth-child(n+3) { animation-delay: 240ms; }
+
+@keyframes resultDescriptorIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Deep-link buttons + dial section: a soft, slightly-later fade-in that
+   composes with the hero animation above. Quietly catches up without
+   stealing focus from the album art / descriptors.                      */
+.view#view-result.active .listen-on,
+.view#view-result.active .dial-section {
+  animation: resultSecondaryIn 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.view#view-result.active .listen-on    { animation-delay: 320ms; }
+.view#view-result.active .dial-section { animation-delay: 400ms; }
+
+@keyframes resultSecondaryIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view#view-result.active .result-art,
+  .view#view-result.active .descriptor.descriptor--initial,
+  .view#view-result.active .listen-on,
+  .view#view-result.active .dial-section {
+    animation: none;
+  }
+}
+
+.result-title {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.result-artist { color: var(--color-text-dim); font-size: var(--text-sm); }
+
+.result-descriptors {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.descriptor {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-text-dim);
+}
+
+.descriptor:not(:first-child)::before {
+  content: '·';
+  margin: 0 12px;
+  color: var(--color-accent);
+  font-style: normal;
+}
+
+/* ===== Sonic Portrait =====
+   Five-bar fingerprint between the descriptors and the streaming links.
+   Bars grow in from 4px → target height on mount via a CSS height
+   transition; the per-bar transition-delay (set inline by the JS
+   component) creates the staggered build-in. */
+
+.sonic-portrait-section {
+  margin: 0 0 24px;
+}
+
+.sonic-portrait-section .section-title {
+  margin-top: 4px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sonic-portrait {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.portrait-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.portrait-value {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.portrait-bar-track {
+  height: 80px;
+  width: 6px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.portrait-bar {
+  width: 6px;
+  border-radius: 3px;
+  /* Indigo matches the waveform's resting body so Result feels like a
+     "frozen snapshot" of the wave that Home was showing. */
+  background: rgba(98, 88, 200, 0.65);
+  transition: height 600ms var(--ease-out);
+}
+
+.portrait-label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portrait-bar { transition: none; }
+}
 
 .listen-on { display: flex; gap: 8px; margin-bottom: 24px; }
 
@@ -361,90 +596,141 @@ body {
   padding: 12px 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: var(--color-text-dim);
   border-radius: 12px;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.listen-on-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.listen-on-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--color-text); }
 .listen-on-btn .dot { width: 8px; height: 8px; border-radius: 50%; }
 .dot-spotify { background: #1db954; }
 .dot-apple   { background: #fc3c44; }
 .dot-youtube { background: #ff0000; }
 
-.discovery-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 22px;
+/* ===== Discovery Dial =====
+   Fully custom slider. No native <input type="range"> — see discoveryDial.js
+   for the pointer/keyboard/ARIA implementation. The dial sits in its own
+   section above a standalone AI-filter row (no card wrapper). */
+
+.dial-section {
+  margin: 0 0 22px;
 }
 
-.disc-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; }
-.disc-label-main { font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
-.disc-label-value { color: #00d2ff; font-weight: 700; letter-spacing: 0.3px; }
-
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #8c52ff, #00d2ff);
-  outline: none;
-  cursor: pointer;
+.dial-section .section-title {
+  margin-top: 4px;
+  margin-bottom: 14px;
+  text-align: center;
 }
 
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(255, 255, 255, 0.1);
-}
-
-.slider::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.slider-ends {
+/* Endpoint labels are Cormorant Garamond (matches the brand voice) but
+   intentionally NOT italic — italic + thin Cormorant strokes at 12px were
+   too delicate to read on the dark background. 14px regular at full
+   colour saturation gives readability without losing the cinematic feel.
+   Each end is colour-matched to its end of the track gradient. */
+.dial-ends {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
 }
 
+.dial-end--charting { color: var(--color-warm); }
+.dial-end--lost     { color: var(--color-glow); }
+
+.dial-control {
+  position: relative;
+  padding: 10px 0;       /* extra vertical tap-area */
+  cursor: pointer;
+  outline: none;
+  touch-action: none;    /* don't lose the drag to mobile vertical scroll */
+}
+
+/* The track IS the spectrum — a warm→cool gradient that visualises what
+   the user is navigating between. No separate fill element; the thumb
+   alone indicates current position on the spectrum. */
+.dial-track {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(201, 173, 122, 0.7),
+    rgba(183, 175, 255, 0.7)
+  );
+}
+
+.dial-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  /* Neutral warm-white ring — contrasts both ends of the gradient
+     without picking a side (an indigo border would clash with the
+     amber end; an amber border would clash with the lavender end). */
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  transform: translateY(-50%);
+  pointer-events: none;  /* control owns pointer events */
+}
+
+/* Focus ring sits on the thumb (only on keyboard focus, not click).
+   Neutral white halo matches the new neutral border. */
+.dial-control:focus-visible .dial-thumb {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+
+/* The dial's central anchor. Inter (intentionally not Cormorant) so it
+   reads as a confident "you are here" status, distinct from the italic
+   Cormorant flavour text above and below it. Colour is set dynamically
+   by discoveryDial.js — it interpolates between the gradient endpoints
+   based on the current value, so the name visually anchors to its
+   position on the spectrum (amber at Charting, mauve at Roaming,
+   lavender at Lost). No static colour set here. */
+.dial-label-main {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 14px;
+}
+
+.dial-subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-flavor);
+  text-align: center;
+  margin-top: 4px;
+  min-height: 1em;       /* prevent layout jump during fade */
+  transition: opacity 200ms ease;
+}
+
+/* Standalone AI-filter row — no longer inside a card, so no border-top
+   or extra margin-top is needed. Internal vertical padding gives it a
+   reasonable hit area on its own. */
 .filter-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 0;
 }
 
 .filter-row-text { flex: 1; }
-.filter-row-label { font-size: 13px; font-weight: 500; }
-.filter-row-hint { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 2px; }
+.filter-row-label { font-size: var(--text-sm); font-weight: 500; }
+.filter-row-hint { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.4); margin-top: 3px; }
 
 .toggle {
   width: 44px;
@@ -480,8 +766,36 @@ body {
   margin-bottom: 14px;
 }
 
-.rec-count { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.rec-count { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.5); }
 .rec-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* Loading + empty states for the rec list (P-12).
+   Italic Cormorant matches the "sonic reason" voice elsewhere on the
+   result screen — keeps these messages quiet and brand-consistent rather
+   than treating them as system text. Subtle pulse on the loader signals
+   activity without distracting from the rest of the result screen.   */
+.rec-loading,
+.rec-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--color-text-dim);
+  text-align: center;
+  padding: 22px 0 8px;
+}
+
+.rec-loading {
+  animation: recLoadingPulse 1800ms ease-in-out infinite;
+}
+
+@keyframes recLoadingPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-loading { animation: none; opacity: 0.7; }
+}
 
 .rec-card {
   background: rgba(255, 255, 255, 0.03);
@@ -500,21 +814,37 @@ body {
 
 .rec-art { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; }
 .rec-info { flex: 1; min-width: 0; }
-.rec-title-text { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-title-text { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-artist {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.55);
-  margin-top: 2px;
+  margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.rec-meta { display: flex; gap: 6px; align-items: center; margin-top: 7px; flex-wrap: wrap; }
+/* The "sonic reason" — a short italic phrase explaining why this track
+   resembles the anchor (e.g. "Same cathedral reverb"). Replaces the old
+   fake "% match" chip. Same flavor colour as the dial subtitle so
+   italic-Cormorant-style secondary text has one voice across the app. */
+.rec-reason {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-flavor);
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-meta { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
 
 .chip {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   padding: 2px 8px;
   border-radius: 100px;
   display: inline-flex;
@@ -522,7 +852,6 @@ body {
   gap: 4px;
 }
 
-.chip-match { background: rgba(0, 210, 255, 0.12); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.22); }
 .chip-indie { background: rgba(140, 82, 255, 0.14); color: #c5a6ff; border: 1px solid rgba(140, 82, 255, 0.25); }
 .chip-ai    { background: rgba(234, 179, 8, 0.14); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.25); }
 
@@ -544,9 +873,115 @@ body {
 
 .rec-play:hover { background: rgba(255, 255, 255, 0.14); }
 
+/* P-14 — inline preview states.
+   The play button has three exclusive visuals (idle triangle, loading
+   pulse, playing mini-waveform) plus a disabled state for tracks where
+   iTunes has no preview. Two SVGs sit inside the button (.rec-play-icon
+   and .rec-play-bars); CSS picks which is visible based on the modifier
+   class. Default = icon visible, bars hidden.                          */
+
+.rec-play {
+  position: relative;
+  overflow: hidden;
+}
+
+.rec-play-icon,
+.rec-play-bars {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.rec-play-icon { opacity: 1; }
+.rec-play-bars { opacity: 0; }
+
+/* Playing → swap to the 4-bar mini waveform (lavender, matches the home
+   waveform's apex colour). Each bar has its own scaleY animation with a
+   staggered delay + slightly different duration so the four bars never
+   move in lockstep — same "alive" feel as the home stage at small scale. */
+.rec-play--playing .rec-play-icon { opacity: 0; }
+.rec-play--playing .rec-play-bars { opacity: 1; }
+
+.rec-play-bar {
+  fill: var(--color-glow);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rec-play--playing .rec-play-bar-1 { animation: recPlayBar 0.85s ease-in-out infinite; }
+.rec-play--playing .rec-play-bar-2 { animation: recPlayBar 1.10s ease-in-out infinite 0.12s; }
+.rec-play--playing .rec-play-bar-3 { animation: recPlayBar 0.95s ease-in-out infinite 0.05s; }
+.rec-play--playing .rec-play-bar-4 { animation: recPlayBar 1.00s ease-in-out infinite 0.18s; }
+
+@keyframes recPlayBar {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+
+/* Loading → pulse the triangle while iTunes lookup is in flight. */
+.rec-play--loading .rec-play-icon {
+  animation: recPlayLoadingPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes recPlayLoadingPulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.85; }
+}
+
+/* Disabled → permanent dimmed triangle, not-allowed cursor. */
+.rec-play--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.rec-play--disabled:hover { background: rgba(255, 255, 255, 0.08); } /* cancel hover lift */
+
+/* Subtle left accent on the rec card whose preview is loaded (whether
+   playing or paused). Pairs with the progress bar below to signal
+   "this is the active track."                                          */
+.rec-card--playing {
+  border-left: 2px solid rgba(140, 82, 255, 0.5);
+  padding-left: 10px; /* preserve the inner-content alignment (default padding is 12px) */
+}
+
+/* Thin progress bar pinned to the bottom edge of the card. Only visible
+   when this card is the active one; width is driven by JS from
+   audio.currentTime via the timeupdate event.                          */
+.rec-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.rec-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--color-flavor);
+  transition: width 0.18s linear;
+}
+
+.rec-card { position: relative; } /* enables absolute-positioned .rec-progress */
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-play--playing .rec-play-bar { animation: none; transform: scaleY(0.7); }
+  .rec-play--loading .rec-play-icon { animation: none; opacity: 0.55; }
+  .rec-progress-fill { transition: none; }
+}
+
 /* ===== LIBRARY ===== */
 
-.lib-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 6px 0 20px; }
+.lib-title {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  margin: 6px 0 20px;
+}
 
 .taste-card {
   background: linear-gradient(135deg, rgba(140, 82, 255, 0.12), rgba(0, 210, 255, 0.08));
@@ -557,18 +992,21 @@ body {
 }
 
 .taste-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: var(--tracking-label);
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 14px;
 }
 
 .taste-stats { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.taste-big { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
-.taste-sub { font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+.taste-big { font-family: var(--font-serif); font-size: 32px; font-weight: 600; line-height: 1; }
+.taste-sub { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.5); margin-top: 4px; }
 
+/* Legacy horizontal feature bars (P-08 prototype) — kept in the
+   stylesheet for any future use, but the taste card now uses the same
+   vertical Sonic Portrait component as the result screen (P-15). */
 .features { display: flex; flex-direction: column; gap: 10px; }
 
 .feature {
@@ -576,13 +1014,48 @@ body {
   grid-template-columns: 90px 1fr 30px;
   gap: 10px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
-.feature-label { color: rgba(255, 255, 255, 0.6); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.feature-label { color: rgba(255, 255, 255, 0.6); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-label); }
 .feature-bar { height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 3px; overflow: hidden; }
 .feature-fill { height: 100%; background: linear-gradient(90deg, #8c52ff, #00d2ff); border-radius: 3px; }
 .feature-value { text-align: right; color: rgba(255, 255, 255, 0.7); font-weight: 600; }
+
+/* P-15 — Library taste card hosts the same Sonic Portrait component as
+   the result screen. The vertical bars sit centred below the stats; the
+   empty-state message takes their place when the library has no
+   features yet to average. */
+.taste-portrait {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.taste-portrait-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--color-text-dim);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Empty-state message for the song list when the user hasn't identified
+   anything yet (real mode only — demo mode falls back to sample data). */
+.library-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--color-text-dim);
+  text-align: center;
+  padding: 22px 12px;
+}
+
+/* Library entries are tap-targets — clicking opens Spotify search.
+   Small hover/active feedback to signal interactivity. */
+.recent-row:hover { background: rgba(255, 255, 255, 0.02); border-radius: 8px; }
+.recent-row:active { opacity: 0.7; }
 
 /* ===== PROFILE ===== */
 
@@ -596,12 +1069,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 22px;
 }
 
-.prof-name { font-size: 18px; font-weight: 700; }
-.prof-email { font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+.prof-name { font-size: var(--text-md, 18px); font-weight: 600; }
+.prof-email { font-size: var(--text-sm); color: rgba(255, 255, 255, 0.5); margin-top: 3px; }
 
 .list-group {
   background: rgba(255, 255, 255, 0.03);
@@ -622,8 +1095,8 @@ body {
 
 .list-item:last-child { border-bottom: none; }
 .list-item:hover { background: rgba(255, 255, 255, 0.03); }
-.list-item-label { font-size: 14px; font-weight: 500; }
-.list-item-value { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.list-item-label { font-size: var(--text-base); font-weight: 500; }
+.list-item-value { font-size: var(--text-sm); color: rgba(255, 255, 255, 0.5); }
 
 .info-banner {
   background: rgba(0, 210, 255, 0.06);
@@ -631,7 +1104,7 @@ body {
   color: #b8ecff;
   border-radius: 12px;
   padding: 12px 14px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   line-height: 1.55;
   margin-bottom: 20px;
 }

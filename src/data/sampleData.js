@@ -1,12 +1,18 @@
 /**
  * Sample fixtures used by the prototype UI.
- * In production these get replaced by:
- *   - ANCHOR              → AudD fingerprint match (P-10)
- *   - RECOMMENDATIONS     → ReccoBeats recommendations + audio features (P-12)
+ *
+ * Production wiring:
+ *   - ANCHOR              → live AudD fingerprint match (P-10 ✓)
+ *                           Real recognized tracks come through
+ *                           recognitionService.normalizeMatch(). ANCHOR is
+ *                           kept as the canonical shape reference and as
+ *                           the demo-mode fallback (P-19).
+ *   - RECOMMENDATIONS     → ReccoBeats recommendations + audio features (P-11)
+ *   - SONIC_REASONS       → per-rec reasons from audio-feature deltas (P-12)
  *   - RECENT / HISTORY_*  → localStorage-backed user history (P-15)
  *
- * Keeping the shapes here gives the UI something to render before the
- * services are wired up, and lets `?demo=1` mode (P-19) bypass APIs entirely.
+ * Keeping the shapes here lets `?demo=1` mode (P-19) bypass APIs entirely
+ * for screen recordings, App Store assets, and offline demos.
  */
 
 export const ANCHOR = {
@@ -14,6 +20,19 @@ export const ANCHOR = {
   artist: 'M83',
   album: "Hurry Up, We're Dreaming",
   artClass: 'art-2',
+  // 3 emotional descriptors. Placeholder for P-05 layout — P-11 generates
+  // these from real audio features via generateDescriptors().
+  descriptors: ['Euphoric', 'Nostalgic', 'Nocturnal'],
+  // 5-trait Sonic Portrait values (0–100). Placeholder for P-06 layout;
+  // P-11 maps real audio features (energy, valence, acousticness, tempo,
+  // instrumentalness) into this same shape.
+  portrait: {
+    energy: 82,
+    mood: 34,
+    texture: 76,
+    pace: 68,
+    depth: 91,
+  },
 };
 
 export const RECOMMENDATIONS = [
@@ -52,4 +71,24 @@ export const HISTORY_EXTRA = [
   { t: 'Undersea',   a: 'Tycho',           art: 'art-10', time: 'Nov 6' },
   { t: 'First Love', a: 'Emmit Fenn',      art: 'art-8',  time: 'Nov 4' },
   { t: 'Weightless', a: 'Marconi Union',   art: 'art-6',  time: 'Nov 2' },
+];
+
+// Rotating "sonic reason" phrases shown on each rec card under the artist
+// name. Indexed by rec position (modulo length) so the first 12 recs each
+// get a distinct phrase, then phrases repeat. Placeholder for P-12, which
+// will compute per-rec reasons from real audio-feature deltas (e.g. "tempo
+// −12 BPM, more acoustic, brighter top end" → "Quieter intensity").
+export const SONIC_REASONS = [
+  'Same slow exhale',
+  'Darker, more fractured',
+  'Brighter twin',
+  'Matching pulse',
+  'Same cathedral reverb',
+  'Wider, more open',
+  'Colder atmosphere',
+  'Tighter, more urgent',
+  'Same haze, different angle',
+  'Deeper low end',
+  'Higher, more fragile',
+  'Quieter intensity',
 ];

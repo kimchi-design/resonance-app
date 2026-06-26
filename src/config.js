@@ -24,17 +24,21 @@ export const WAVEFORM_BAR_COUNT = 32; // breathing waveform on home screen
 export const API = {
   recognize: '/api/audd',
   reccobeats: '/api/reccobeats',
+  itunes: '/api/itunes', // iTunes Search for 30s preview URLs (P-14)
 };
 
 // ----- Discovery Dial (used in P-07 and P-13) -----
-// Slider value (0–100) maps to one of five named positions.
-// Subtitle phrases are intentionally omitted here — P-07 finalizes the voice.
+// Slider value (0–100) maps to one of five named positions. Each position
+// carries both its label (the noun shown in the dial) and a one-line
+// subtitle (the descriptive phrase that fades in below it).
+// Single source of truth — discoveryDial.js reads from here so a copy
+// edit lives in one place.
 export const DISCOVERY_POSITIONS = [
-  { id: 'charting', label: 'Charting', range: [0, 19] },
-  { id: 'familiar', label: 'Familiar', range: [20, 39] },
-  { id: 'roaming', label: 'Roaming', range: [40, 59] },
-  { id: 'adventurous', label: 'Adventurous', range: [60, 84] },
-  { id: 'lost', label: 'Lost', range: [85, 100] },
+  { id: 'charting',    label: 'Charting',    range: [0, 19],   subtitle: 'music most people already know' },
+  { id: 'familiar',    label: 'Familiar',    range: [20, 39],  subtitle: 'well-loved, well-traveled ground' },
+  { id: 'roaming',     label: 'Roaming',     range: [40, 59],  subtitle: 'leaning toward the unknown' },
+  { id: 'adventurous', label: 'Adventurous', range: [60, 79],  subtitle: 'few have been here before' },
+  { id: 'lost',        label: 'Lost',        range: [80, 100], subtitle: 'music almost no one has found yet' },
 ];
 
 export const DEFAULT_DISCOVERY = 50; // Roaming

@@ -5,6 +5,9 @@ node_modules
 dist
 dist-ssr
 
+# Vite temp config artifacts
+vite.config.js.timestamp-*
+
 # Local env files — keys live here, NEVER commit
 .env
 .env.local
