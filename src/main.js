@@ -1,4 +1,5 @@
 import './styles/main.css';
+import { inject } from '@vercel/analytics';
 import {
   ANCHOR,
   RECOMMENDATIONS,
@@ -35,6 +36,9 @@ import * as libraryService from './services/libraryService.js';
 import { fallbackArtClass } from './utils/albumArt.js';
 import { DEFAULT_DISCOVERY } from './config.js';
 import { IS_DEMO } from './utils/demoMode.js';
+
+// Initialize Vercel Analytics
+inject();
 
 /* =====================================================================
    Resonance — main entry.
