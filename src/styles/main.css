@@ -353,6 +353,11 @@ body {
 
 .view { display: none; }
 .view.active { display: block; animation: fadeIn 0.35s ease; }
+/* A11y: views receive programmatic focus on navigation (see showView in
+   navigation.js) so SR/keyboard users land in the new context. The focus
+   ring belongs on real controls, not on the container that merely caught
+   focus — suppress it here. Interactive elements keep their own outline. */
+.view:focus { outline: none; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
@@ -410,6 +415,69 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0 0 12px 0;
+}
+
+/* P-17: share button — mirrors the back button at the top-right of the
+   result view. Absolutely positioned so it shares the back button's row
+   without disturbing the existing in-flow layout. */
+#view-result { position: relative; }
+
+.share-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.share-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Brief confirmation state after a desktop copy-link fallback. */
+.share-btn--copied {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* Small "Link copied" toast, anchored under the share button. */
+.share-toast {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background: rgba(98, 88, 200, 0.95);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+  z-index: 5;
+}
+
+.share-toast--show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-btn,
+  .share-toast {
+    transition: none;
+  }
 }
 
 /* ===== RESULT ===== */
@@ -815,6 +883,22 @@ body {
 .rec-art { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; }
 .rec-info { flex: 1; min-width: 0; }
 .rec-title-text { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A11y: the title is a real link (keyboard + SR access to the Spotify
+   open-action) but styled to look identical to the surrounding text —
+   inherits colour/weight, no underline. A visible focus ring appears
+   only for keyboard users via :focus-visible. */
+.rec-open { color: inherit; text-decoration: none; }
+.rec-open:focus { outline: none; }
+/* The ring is an INSET shadow rather than an outline: .rec-title-text
+   sets overflow:hidden for its ellipsis, which clips anything painted
+   outside the anchor's own box — an outline, an outline-offset, or an
+   outset box-shadow would all be cut off mid-ring. Painting inward
+   keeps the full ring visible inside the clip. */
+.rec-open:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-glow);
+  border-radius: 3px;
+}
 .rec-artist {
   font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.55);

@@ -32,6 +32,7 @@ import {
 import { lookupPreviewUrl } from './services/previewService.js';
 import * as audioPreview from './services/audioPreview.js';
 import * as libraryService from './services/libraryService.js';
+import { fallbackArtClass } from './utils/albumArt.js';
 import { DEFAULT_DISCOVERY } from './config.js';
 import { IS_DEMO } from './utils/demoMode.js';
 
@@ -72,6 +73,9 @@ let recsFeaturesController = null;
 // inside renderResult so a fresh recognition doesn't carry over the
 // previous anchor's values into per-rec reason computation.
 let anchorFeatures = null;
+// P-17: the track currently shown on the result screen. Set at the top of
+// renderResult; read by the share button to build the ?match= share URL.
+let currentTrack = null;
 // In-flight iTunes preview lookups, keyed by rec id. So a second tap on
 // the same rec while its preview is still being fetched is a no-op
 // instead of firing a duplicate fetch. Set on tap, cleared on resolve.
@@ -364,7 +368,7 @@ function renderRecs() {
     <div class="rec-card" data-rec-id="${escapeAttr(r.id)}" data-link="${escapeAttr(linkUrl)}">
       <div class="${artClass}" ${artStyle}></div>
       <div class="rec-info">
-        <div class="rec-title-text">${escapeHtml(r.t)}</div>
+        <div class="rec-title-text"><a class="rec-open" href="${escapeAttr(linkUrl)}" target="_blank" rel="noopener">${escapeHtml(r.t)}</a></div>
         <div class="rec-artist">${escapeHtml(r.a)}</div>
         <div class="rec-reason">${escapeHtml(r.reason)}</div>
         <div class="rec-meta">
@@ -373,7 +377,7 @@ function renderRecs() {
           <span class="listeners">${formatListeners(r.listeners)}</span>
         </div>
       </div>
-      <button class="${playClass}" aria-label="Preview"${playTitle}${playDisabled}>
+      <button class="${playClass}" aria-label="Preview ${escapeAttr(r.t)}"${playTitle}${playDisabled}>
         <svg class="rec-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <svg class="rec-play-bars" width="14" height="14" viewBox="0 0 14 14">
           <rect class="rec-play-bar rec-play-bar-1" x="2"  y="3" width="1.5" height="8" rx="0.75"/>
@@ -395,6 +399,11 @@ function renderRecs() {
     const id = cardEl.dataset.recId;
     const rec = currentRecs.find((r) => r.id === id);
     cardEl.addEventListener('click', () => window.open(cardEl.dataset.link, '_blank'));
+    // A11y: the title is now a real <a> (keyboard + SR accessible). Stop
+    // its click from bubbling to the card handler above — otherwise a
+    // click on the title would open the link twice (anchor + card).
+    const openLink = cardEl.querySelector('.rec-open');
+    if (openLink) openLink.addEventListener('click', (e) => e.stopPropagation());
     const playBtn = cardEl.querySelector('.rec-play');
     if (playBtn) {
       playBtn.addEventListener('click', (e) => {
@@ -969,6 +978,10 @@ function renderResult(track) {
   // screen. Live recognitions keep the default 'home'.
   document.getElementById('view-result').dataset.returnTo = 'home';
 
+  // P-17: remember the displayed track so the share button can build a
+  // link back to exactly this result.
+  currentTrack = track;
+
   document.getElementById('resultTitle').textContent = track.title;
   // Some recognized tracks come back with no album (e.g. singles, live
   // recordings AudD couldn't tie to a release). Drop the separator when
@@ -1039,16 +1052,195 @@ function renderResult(track) {
   showView('result');
 }
 
+/* ---------- Share (P-17) ---------- */
+/**
+ * Build a shareable URL that reopens the recipient straight into the
+ * current result. Encodes the Spotify ID (so the recipient's app can
+ * fetch the same audio features + recommendations) plus title/artist
+ * (so the result header renders immediately, with no metadata lookup —
+ * there's no cheap "Spotify ID → title/artist" call under our keyless
+ * constraints). Preserves the demo flag so a shared demo link still
+ * opens in demo mode.
+ */
+function buildShareUrl(track) {
+  const url = new URL(window.location.origin + window.location.pathname);
+  if (track.spotifyId) url.searchParams.set('match', track.spotifyId);
+  if (track.title) url.searchParams.set('t', track.title);
+  if (track.artist) url.searchParams.set('a', track.artist);
+  if (IS_DEMO) url.searchParams.set('demo', '1');
+  return url.toString();
+}
+
+/**
+ * Share the current result. Web Share API where available (mobile —
+ * opens the native share sheet), copy-link fallback elsewhere (desktop).
+ * Both paths are guarded so a user-cancelled share sheet or a missing
+ * clipboard API never throws into the console.
+ */
+async function shareResult() {
+  if (!currentTrack) return;
+  const url = buildShareUrl(currentTrack);
+  const title = currentTrack.title || 'Resonance';
+  const artist = currentTrack.artist || '';
+  const shareData = {
+    title: 'Resonance',
+    text: artist ? `${title} — ${artist} · found on Resonance` : `${title} · found on Resonance`,
+    url,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch {
+      // User dismissed the sheet, or share failed — silent, no fallback
+      // needed (they chose not to share).
+    }
+    return;
+  }
+
+  // Desktop fallback: copy the link and confirm inline.
+  try {
+    await navigator.clipboard.writeText(url);
+    showShareCopied();
+  } catch {
+    // Clipboard blocked (insecure context / permissions) — last-ditch
+    // prompt so the user can still grab the link manually.
+    window.prompt('Copy this link', url);
+  }
+}
+
+let shareCopiedTimer = null;
+/** Brief "Link copied" confirmation under the share button. */
+function showShareCopied() {
+  const btn = document.getElementById('shareResult');
+  if (!btn) return;
+  btn.classList.add('share-btn--copied');
+
+  let toast = document.getElementById('shareToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'shareToast';
+    toast.className = 'share-toast';
+    toast.textContent = 'Link copied';
+    document.getElementById('view-result').appendChild(toast);
+  }
+  // Force a reflow so the transition runs even if the toast was just made.
+  void toast.offsetWidth;
+  toast.classList.add('share-toast--show');
+
+  if (shareCopiedTimer) clearTimeout(shareCopiedTimer);
+  shareCopiedTimer = setTimeout(() => {
+    btn.classList.remove('share-btn--copied');
+    toast.classList.remove('share-toast--show');
+    shareCopiedTimer = null;
+  }, 1800);
+}
+
+/**
+ * Boot handler for a shared `?match=` link. If the URL carries a shared
+ * track, build a track object from the params and jump STRAIGHT to the
+ * result screen (the whole point of a share link — skip the listen flow).
+ *
+ * Returns true if it handled a shared match, false otherwise. No caller
+ * branches on this today — the home view is the default by virtue of its
+ * `active` class in index.html, and renderResult's showView('result')
+ * overrides it — but the boolean is the honest signal for any future
+ * boot step that needs to know whether the user landed on a share link.
+ *
+ * Works in demo mode: enhanceWithAudioFeatures / loadRecommendations call
+ * the same services that demo mode stubs, so `?demo=1&match=...` resolves
+ * synthetic features + recs after the usual simulated delays.
+ */
+function bootFromSharedMatch() {
+  let params;
+  try {
+    params = new URLSearchParams(window.location.search);
+  } catch {
+    return false;
+  }
+  const id = params.get('match');
+  const title = params.get('t');
+  const artist = params.get('a');
+
+  // Need at least a Spotify ID or a title to have anything to show.
+  if (!id && !title) return false;
+
+  // Resolve the display values ONCE and derive everything from them.
+  // buildLinks and fallbackArtClass both stringify their inputs, so
+  // passing the raw params through would yield a "null null" search URL
+  // and an art class keyed on a different seed than the one
+  // libraryService stores for the same track.
+  const displayTitle = title || 'Shared track';
+  const displayArtist = artist || 'Unknown artist';
+
+  const track = {
+    title: displayTitle,
+    artist: displayArtist,
+    album: '',
+    spotifyId: id || null,
+    artUrl: null,
+    artClass: fallbackArtClass(displayTitle, displayArtist),
+    descriptors: PLACEHOLDER_DESCRIPTORS,
+    portrait: PLACEHOLDER_PORTRAIT,
+    links: buildLinks(displayTitle, displayArtist),
+  };
+
+  renderResult(track);
+
+  // Strip the share params from the address bar now that they've been
+  // consumed. Without this the URL stays pinned to the shared result:
+  // tapping back reaches home, but any reload — or the installed PWA
+  // relaunching from a start URL captured off a shared link — would
+  // bounce the user back into this result forever. replaceState keeps
+  // it out of session history so back still behaves. The demo flag is
+  // preserved because it governs the whole session, not just this view.
+  try {
+    window.history.replaceState({}, '', window.location.pathname + (IS_DEMO ? '?demo=1' : ''));
+  } catch {
+    // Non-fatal — some embedded/sandboxed contexts block replaceState.
+  }
+
+  // Persist a shared open into the library too — it's a song the user
+  // engaged with. No-op in demo mode (libraryService guards internally).
+  libraryService.saveTrack(track);
+
+  if (id) {
+    // Pull the real Sonic Portrait + descriptors and similar tracks via
+    // the same paths live recognition uses.
+    enhanceWithAudioFeatures(id);
+    loadRecommendations(id);
+  } else {
+    // No Spotify ID — can't fetch features or recs. Honest empty rec
+    // state; placeholders stay on the portrait/descriptors.
+    setCurrentRecs([]);
+  }
+  return true;
+}
+
 /* ---------- Controls ---------- */
 function toggleAi() {
   hideAi = !hideAi;
-  document.getElementById('aiToggle').classList.toggle('active', hideAi);
+  const el = document.getElementById('aiToggle');
+  el.classList.toggle('active', hideAi);
+  // A11y: keep the switch's checked state in sync so screen readers
+  // announce "on"/"off" as the user toggles it.
+  el.setAttribute('aria-checked', String(hideAi));
   renderRecs();
 }
 
 /* ---------- Wire-up ---------- */
 document.getElementById('listenStage').addEventListener('click', toggleListen);
 document.getElementById('aiToggle').addEventListener('click', toggleAi);
+// A11y: the toggle is a role=switch div, so it needs keyboard activation
+// (Enter/Space) that a native <button> would give for free.
+document.getElementById('aiToggle').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    toggleAi();
+  }
+});
+// P-17: share the current result (Web Share API / copy-link fallback).
+document.getElementById('shareResult')?.addEventListener('click', shareResult);
 
 /* ---------- Boot ---------- */
 waveformSvg = initWaveform(document.getElementById('waveform'));
@@ -1100,4 +1292,44 @@ if (IS_DEMO) {
     'background:#6258c8;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600',
     '— recognition and recommendations are served from sample data; no API calls.'
   );
+}
+
+// P-17: a shared `?match=` link opens straight into the result for that
+// track, skipping the home listen flow. Runs after the normal boot wiring
+// so renderResult has everything (dial, audio subscription) ready.
+bootFromSharedMatch();
+
+// P-17: register the service worker for installability + fast repeat
+// loads. PROD-only — registering under Vite's dev server would cache dev
+// modules and fight HMR. The SW lives at the site root (public/sw.js →
+// served at /sw.js) so its scope covers the whole app. Failures are
+// non-fatal: the app works fine without it.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    // The SW calls skipWaiting() + clients.claim(), so a newly deployed
+    // version takes control of THIS page while it's still running the
+    // previously-cached bundle. Refresh once when that happens so the
+    // page and its service worker are the same version.
+    //
+    // Read the controller BEFORE registering: on a first-ever install
+    // clients.claim() also fires controllerchange, and reloading there
+    // would bounce every new visitor once for nothing. Only a genuine
+    // update — already controlled, now controlled by something new —
+    // earns the refresh.
+    const hadController = !!navigator.serviceWorker.controller;
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || refreshing) return;
+      // Never reload out from under an in-progress recognition — the mic
+      // capture and its AudD request would die mid-flight and the user
+      // would just see the home stage again with no explanation. The new
+      // SW is already active either way; the next load picks it up.
+      if (isListening) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
 }

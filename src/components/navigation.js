@@ -39,6 +39,24 @@ export function showView(viewId) {
 
   const content = document.getElementById('content');
   if (content) content.scrollTop = 0;
+
+  // A11y: move focus into the newly shown view so screen-reader and
+  // keyboard users land in the new context instead of being left on a
+  // now-hidden control (e.g. the listen-stage button after a match).
+  // tabindex=-1 makes the container programmatically focusable without
+  // adding it to the tab order; preventScroll keeps the view pinned to
+  // the top we just scrolled to. Deferred a frame so the focus lands
+  // after the view's enter animation has begun.
+  if (target) {
+    target.setAttribute('tabindex', '-1');
+    requestAnimationFrame(() => {
+      try {
+        target.focus({ preventScroll: true });
+      } catch (_) {
+        target.focus();
+      }
+    });
+  }
 }
 
 /**
