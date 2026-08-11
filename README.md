@@ -177,8 +177,9 @@ someone who will open it on a desktop in a silent room.
 
 Verification performed on the current build:
 
-- **Build integrity** — all source modules transform cleanly; a custom
-  import/export resolution pass confirms every cross-module import resolves.
+- **Build integrity** — `npm run build` transforms all source modules cleanly.
+  Vite fails the build on an unresolved import, so a green build is itself the
+  cross-module resolution check.
 - **Accessibility pass** — status messages announce via `role="status"` /
   `aria-live="polite"`; the AI filter is a real `role="switch"` with keyboard
   activation and `aria-checked` sync; focus moves into each newly shown view;
@@ -192,7 +193,9 @@ Verification performed on the current build:
 - **Reduced motion** — every CSS animation carries a `prefers-reduced-motion`
   guard and every Web Animations call checks it in JS.
 
-Detailed test cases, results, and logged defects: **[`TESTING.md`](TESTING.md)**
+Not covered by the above: the install prompt, standalone launch, the native
+share sheet, and the service worker's offline fallback are verified by hand on
+a device rather than by any automated check.
 
 ---
 
