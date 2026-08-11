@@ -7,8 +7,8 @@ it, three emotional descriptors, and twenty similar tracks — each one labeled
 with the specific audio dimension that connects it to the anchor song
 ("Brighter mood", "More vocal-forward", "Shared drive"), not just a genre tag.
 
-🔗 **Live demo:** https://resonance-app-two.vercel.app/?demo=1
-🔗 **Live app (real recognition):** https://resonance-app-two.vercel.app
+🔗 **Live demo:** https://REPLACE-ME.vercel.app/?demo=1
+🔗 **Live app (real recognition):** https://REPLACE-ME.vercel.app
 
 > The `?demo=1` link is the one to open first — it runs the complete flow with
 > deterministic stub data, no microphone permission and no API quota required.
@@ -229,7 +229,7 @@ brand-new releases — placeholders simply remain rather than the view breaking.
 Requires Node.js 18+.
 
 ```sh
-git clone https://github.com/REPLACE-ME/resonance-app.git
+git clone https://github.com/kimchi-design/resonance-app.git
 cd resonance-app
 npm install
 cp .env.example .env      # then paste your AudD token into .env
@@ -328,4 +328,6 @@ than overlooked:
 
 ## License
 
-No license granted. Portfolio and demonstration use.
+**Proprietary — all rights reserved.** This repository is public for portfolio
+review and technical evaluation. It is not open-source software, and no license
+to use, modify, or redistribute the code is granted. See [`LICENSE`](LICENSE).

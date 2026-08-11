@@ -2,6 +2,7 @@
   "name": "resonance-app",
   "private": true,
   "version": "0.0.1",
+  "license": "UNLICENSED",
   "type": "module",
   "description": "Resonance — music discovery web app. Vite + vanilla JS, deployed on Vercel.",
   "scripts": {
