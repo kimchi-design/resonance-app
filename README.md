@@ -3,12 +3,12 @@
 **A music discovery web app that explains *why* two songs sound alike.**
 
 Identify a song from a five-second microphone clip, then get a sonic portrait of
-it, three emotional descriptors, and twenty similar tracks — each one labeled
+it, three emotional descriptors, and a ranked list of similar tracks — each labeled
 with the specific audio dimension that connects it to the anchor song
 ("Brighter mood", "More vocal-forward", "Shared drive"), not just a genre tag.
 
-🔗 **Live demo:** https://REPLACE-ME.vercel.app/?demo=1
-🔗 **Live app (real recognition):** https://REPLACE-ME.vercel.app
+🔗 **Live demo:** https://resonance-app-two.vercel.app/?demo=1
+🔗 **Live app (real recognition):** https://resonance-app-two.vercel.app
 
 > The `?demo=1` link is the one to open first — it runs the complete flow with
 > deterministic stub data, no microphone permission and no API quota required.
@@ -40,8 +40,9 @@ with the specific audio dimension that connects it to the anchor song
    as a track identity.
 3. **Explain** — the result screen builds a five-trait *Sonic Portrait* from the
    track's audio features and reduces them to three plain-language descriptors.
-4. **Recommend** — twenty similar tracks, each with a caption derived from the
-   largest normalized difference between its audio features and the anchor's.
+4. **Recommend** — up to twenty similar tracks (however many ReccoBeats returns
+   for that anchor), each with a caption derived from the largest normalized
+   difference between its audio features and the anchor's.
 5. **Control** — the **Discovery Dial** re-ranks the list live along a
    mainstream ↔ obscure axis, from *Charting* to *Lost*.
 6. **Preview & save** — 30-second previews play inline; identified tracks persist
@@ -54,17 +55,18 @@ straight to that track's result screen.
 
 ## Screenshots
 
-<!-- Replace these with real captures. Suggested set:
-     1. Home listen stage (idle waveform)
-     2. Listening state (mic-driven waveform, topbar hidden)
-     3. Result screen (sonic portrait + descriptors + rec cards)
-     4. Discovery Dial mid-drag showing a reshuffled list
-     5. Library tab with taste fingerprint
--->
-
-| Home | Result | Library |
+| Listen stage | Capturing | Result |
 | --- | --- | --- |
-| _screenshot_ | _screenshot_ | _screenshot_ |
+| <img src="docs/screenshots/home.png" width="240" alt="Home listen stage with the idle breathing waveform"> | <img src="docs/screenshots/listening.png" width="240" alt="Listening state, waveform driven by live microphone input"> | <img src="docs/screenshots/result.png" width="240" alt="Result screen showing album art, descriptors and the Sonic Portrait"> |
+
+### The Discovery Dial actually re-ranks
+
+Same anchor track, same recommendation set — only the dial moved. The list
+reorders live on the client; no refetch.
+
+| Dial at *Charting* | Dial at *Roaming* |
+| --- | --- |
+| <img src="docs/screenshots/dial-charting.png" width="280" alt="Discovery Dial at Charting, list led by high-listener tracks"> | <img src="docs/screenshots/dial-roaming.png" width="280" alt="Discovery Dial at Roaming, list reordered toward less mainstream tracks"> |
 
 ---
 
